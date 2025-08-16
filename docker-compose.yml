@@ -78,7 +78,7 @@ services:
     expose:
       - "8080"
     healthcheck:
-      # Simple HTTP check against the container’s Apache
+      # HTTP check against the container’s Apache
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/ || exit 1"]
       interval: 15s
       timeout: 5s
