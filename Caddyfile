@@ -1,0 +1,8 @@
+{$DOMAIN} {
+    reverse_proxy moodle:8080
+    encode zstd gzip
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+    }
+}
