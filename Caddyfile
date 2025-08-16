@@ -1,12 +1,20 @@
 {
-        email ak.adeojo@gmail.com
+	email ak.adeojo@gmail.com
 }
 
 lms.auraium.com {
-        reverse_proxy http://moodle:8080
-        encode zstd gzip
-        header {
-                X-Frame-Options "SAMEORIGIN"
-                X-Content-Type-Options "nosniff"
-        }
+	reverse_proxy http://moodle:8080 {
+		# Make Moodle see the internal upstream host/port, not the public host
+		header_up Host {upstream_hostport}
+		# Keep the usual proxy headers for app logic and logs
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-For {remote}
+	}
+
+	encode zstd gzip
+	header {
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+	}
 }
