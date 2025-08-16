@@ -1,0 +1,10 @@
+--- steps -----
+install Docker + Compose,
+
+pull repo into /moodle_web,
+
+add a .env (for secrets) and a Caddyfile,
+
+bring the stack up,
+
+make it auto-start on reboot.
