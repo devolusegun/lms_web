@@ -1,14 +1,12 @@
-sudo tee /moodle_web/Caddyfile >/dev/null <<'EOF'
 {
-	email ak.adeojo@gmail.com
+        email ak.adeojo@gmail.com
 }
 
 lms.auraium.com {
-	reverse_proxy http://moodle:8080
-	encode zstd gzip
-	header {
-		X-Frame-Options "SAMEORIGIN"
-		X-Content-Type-Options "nosniff"
-	}
+        reverse_proxy http://moodle:8080
+        encode zstd gzip
+        header {
+                X-Frame-Options "SAMEORIGIN"
+                X-Content-Type-Options "nosniff"
+        }
 }
-EOF
