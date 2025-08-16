@@ -79,7 +79,7 @@ services:
       - "8080"
     healthcheck:
       # HTTP check against the container’s Apache
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/ || exit 1"]
+      test: ["CMD-SHELL", "bash -lc ': >/dev/tcp/127.0.0.1/8080'"]
       interval: 15s
       timeout: 5s
       retries: 20
@@ -90,8 +90,7 @@ services:
     image: caddy:2
     restart: unless-stopped
     depends_on:
-      moodle:
-        condition: service_healthy
+      - moodle
     ports:
       - "80:80"
       - "443:443"
