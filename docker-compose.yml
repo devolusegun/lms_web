@@ -1,4 +1,3 @@
-# docker-compose.yml
 version: "3.9"
 
 networks:
@@ -6,9 +5,9 @@ networks:
     driver: bridge
 
 volumes:
-  moodle_app: {}        # Moodle code/persistence (Bitnami persists here)
-  moodle_data: {}       # Equivalent to moodledata (served by container)
-  pg_data: {}           # PostgreSQL data
+  moodle_app: {}
+  moodle_data: {}
+  pg_data: {}
   caddy_data: {}
   caddy_config: {}
 
@@ -17,70 +16,98 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_DB: moodle
-      POSTGRES_USER: moodleuser
-      POSTGRES_PASSWORD: "R85kb53v2@4-yH_q.#"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ}
     volumes:
       - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks: [web]
+    mem_limit: 1g
+    cpus: "0.70"
 
   redis:
     image: redis:7
     command: ["redis-server", "--appendonly", "yes"]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks: [web]
+    mem_limit: 256m
+    cpus: "0.30"
 
   moodle:
     image: bitnami/moodle:latest
     restart: unless-stopped
-    depends_on: [db, redis]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       # ---- DB ----
       MOODLE_DATABASE_TYPE: pgsql
       MOODLE_DATABASE_HOST: db
       MOODLE_DATABASE_PORT_NUMBER: "5432"
-      MOODLE_DATABASE_NAME: moodle
-      MOODLE_DATABASE_USER: moodleuser
-      MOODLE_DATABASE_PASSWORD: "R85kb53v2@4-yH_q.#"
+      MOODLE_DATABASE_NAME: ${POSTGRES_DB}
+      MOODLE_DATABASE_USER: ${POSTGRES_USER}
+      MOODLE_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
 
-      # ---- Initial admin setup ----
-      MOODLE_USERNAME: alakoso
-      MOODLE_PASSWORD: "R85kb53v2@4-yH_q.#"
-      MOODLE_EMAIL: ktlmarketingng@gmail.com
+      # ---- Initial admin (one-time) ----
+      MOODLE_USERNAME: ${MOODLE_USERNAME}
+      MOODLE_PASSWORD: ${MOODLE_PASSWORD}
+      MOODLE_EMAIL: ${MOODLE_EMAIL}
 
       # ---- Site ----
-      MOODLE_SITE_NAME: "Auraium Courses"
-      MOODLE_HOST: "lms.auraium.com"     
+      MOODLE_SITE_NAME: ${MOODLE_SITE_NAME}
+      MOODLE_HOST: ${DOMAIN}
       ALLOW_EMPTY_PASSWORD: "no"
-
-      # ---- Optional SMTP ----
-      # SMTP_HOST: smtp.gmail.com
-      # SMTP_PORT: "587"
-      # SMTP_USER: you@gmail.com
-      # SMTP_PASSWORD: "app-password"
-      # SMTP_PROTOCOL: tls
+      TZ: ${TZ}
     volumes:
       - moodle_app:/bitnami/moodle
       - moodle_data:/bitnami/moodledata
     networks: [web]
-    # Expose to Caddy:
     expose:
-      - "8080"   # HTTP
-      - "8443"   # HTTPS
+      - "8080"
+    healthcheck:
+      # Simple HTTP check against the container’s Apache
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    mem_limit: 2g
+    cpus: "0.90"
 
   caddy:
     image: caddy:2
     restart: unless-stopped
-    depends_on: [moodle]
+    depends_on:
+      moodle:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
     environment:
-      # ACME/Let's Encrypt registration
       ACME_AGREE: "true"
-      ACME_EMAIL: "ak.adeojo@gmail.com"
+      ACME_EMAIL: ${ACME_EMAIL}
+      TZ: ${TZ}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     networks: [web]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:80/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    mem_limit: 256m
+    cpus: "0.30"
