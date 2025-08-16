@@ -1,3 +1,12 @@
+# docker-compose.yml (caddy service)
+environment:
+  DOMAIN: ${DOMAIN}
+  TZ: ${TZ}
+
+# /moodle_web/Caddyfile
+{
+	email ak.adeojo@gmail.com
+}
 {$DOMAIN} {
     reverse_proxy moodle:8080
     encode zstd gzip
