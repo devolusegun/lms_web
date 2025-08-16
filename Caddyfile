@@ -1,17 +1,14 @@
-# docker-compose.yml (caddy service)
-environment:
-  DOMAIN: ${DOMAIN}
-  TZ: ${TZ}
-
-# /moodle_web/Caddyfile
+sudo tee /moodle_web/Caddyfile >/dev/null <<'EOF'
 {
 	email ak.adeojo@gmail.com
 }
-{$DOMAIN} {
-    reverse_proxy moodle:8080
-    encode zstd gzip
-    header {
-        X-Frame-Options "SAMEORIGIN"
-        X-Content-Type-Options "nosniff"
-    }
+
+lms.auraium.com {
+	reverse_proxy http://moodle:8080
+	encode zstd gzip
+	header {
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+	}
 }
+EOF
